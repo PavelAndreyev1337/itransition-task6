@@ -1,0 +1,69 @@
+<link rel="stylesheet" href="https://cdn.metroui.org.ua/v4/css/metro-all.min.css">
+<script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
+
+<div id="available-games-grid" class="tiles-grid tiles-group size-3" data-group-title="General">
+    @* tiles will be created here *@
+</div>
+
+<button id="update-btn" onclick="updatelist()">update</button>
+
+<script src="~/js/signalr/dist/browser/signalr.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<script>
+    let connection = new signalR.HubConnectionBuilder().withUrl("/gamehub").build();
+
+    connection.start().catch(err=>{
+        alert("couldnt connect");
+    })
+    .then( function()
+    {
+        connection.invoke("GetConnectionId").then((data)=>{
+            console.log("MY ID: " + data);
+        });
+    });
+
+    let updatelist = function() {
+        let games = []
+
+        connection.invoke("GetAllGames").then( function (data) {
+
+            console.log(data);
+
+            let grid = document.getElementById("available-games-grid");
+
+            $("#available-games-grid").empty();
+
+            data.forEach( (piece) => {
+                const game = piece.split(",");
+                
+                const bt = document.createElement("span");
+                bt.setAttribute("class", "badge-bottom");
+                bt.appendChild( document.createTextNode(game[2]) );
+                
+                const tile = document.createElement("button");
+                if(parseInt(game[2], 10)  > 1){
+                    tile.setAttribute("class", "bg-blue");
+                }
+                else{
+                    tile.setAttribute("class", "bg-green");
+                }
+                tile.setAttribute("data-role", "tile");
+                tile.setAttribute("data-size", "medium");
+                tile.setAttribute("data-group-title", "General");
+                tile.setAttribute("id", game[1]);
+                tile.appendChild( document.createTextNode(game[0]) );
+                tile.appendChild(bt);
+                grid.appendChild(tile);
+            });
+        });
+    };
+
+    $("#available-games-grid").click( function(event){
+        let tileClicked = event.target.id;
+        
+        if(tileClicked != "available-games-grid"){
+            window.location.href = '@Url.Content("~/Game/Index?gameId=")' + tileClicked;
+        }
+    });
+</script>
